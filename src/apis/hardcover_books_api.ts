@@ -40,6 +40,14 @@ export class HardcoverBooksApi implements BaseBooksApiImpl {
     return doc.contributions?.map(c => c.author?.name).filter(Boolean) ?? [];
   }
 
+  private sanitizeDescription(text: string): string {
+    return (text ?? '')
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/["':;]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   private createBookItem(doc: HardcoverBookDocument): Book {
     const authors = this.extractAuthors(doc);
     const coverUrl = doc.image?.url ?? '';
@@ -49,8 +57,8 @@ export class HardcoverBooksApi implements BaseBooksApiImpl {
       subtitle: '',
       author: authors.join(', '),
       authors,
-      category: '',
-      categories: [],
+      category: doc.genres?.join(', ') ?? '',
+      categories: doc.genres ?? [],
       publisher: '',
       publishDate: doc.release_date ?? '',
       totalPage: doc.pages ?? '',
@@ -58,7 +66,7 @@ export class HardcoverBooksApi implements BaseBooksApiImpl {
       coverSmallUrl: '',
       coverMediumUrl: '',
       coverLargeUrl: coverUrl,
-      description: doc.description ?? '',
+      description: this.sanitizeDescription(doc.description ?? ''),
       link: doc.slug ? `https://hardcover.app/books/${doc.slug}` : '',
       previewLink: '',
     };

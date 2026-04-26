@@ -26,6 +26,7 @@ export interface HardcoverBookDocument {
   image?: HardcoverImage;
   contributions?: HardcoverContribution[];
   isbns?: string[];
+  genres?: string[];
 }
 
 export interface HardcoverSearchHit {
