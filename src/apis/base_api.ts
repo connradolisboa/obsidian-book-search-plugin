@@ -3,6 +3,7 @@ import { BookSearchPluginSettings } from '@settings/settings';
 import { ServiceProvider } from '@src/constants';
 import { requestUrl } from 'obsidian';
 import { GoogleBooksApi } from './google_books_api';
+import { HardcoverBooksApi } from './hardcover_books_api';
 import { NaverBooksApi } from './naver_books_api';
 
 export interface BaseBooksApiImpl {
@@ -23,6 +24,9 @@ export function factoryServiceProvider(settings: BookSearchPluginSettings): Base
     case ServiceProvider.naver:
       validateNaverSettings(settings);
       return new NaverBooksApi(settings.naverClientId, settings.naverClientSecret);
+    case ServiceProvider.hardcover:
+      validateHardcoverSettings(settings);
+      return new HardcoverBooksApi(settings.hardcoverApiKey);
     default:
       throw new Error('Unsupported service provider.');
   }
@@ -31,6 +35,12 @@ export function factoryServiceProvider(settings: BookSearchPluginSettings): Base
 function validateNaverSettings(settings: BookSearchPluginSettings): void {
   if (!settings.naverClientId || !settings.naverClientSecret) {
     throw new ConfigurationError('네이버 개발자센터에서 "Client ID"와 "Client Secret"를 발급받아 설정해주세요.');
+  }
+}
+
+function validateHardcoverSettings(settings: BookSearchPluginSettings): void {
+  if (!settings.hardcoverApiKey) {
+    throw new ConfigurationError('Please set your Hardcover API token in settings (hardcover.app/account/api).');
   }
 }
 
@@ -59,4 +69,18 @@ function appendQueryParams(url: URL, params: Record<string, string | number>): v
   Object.entries(params).forEach(([key, value]) => {
     url.searchParams.append(key, value.toString());
   });
+}
+
+export async function apiPost<T>(url: string, body: unknown, headers?: Record<string, string>): Promise<T> {
+  const res = await requestUrl({
+    url,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...headers,
+    },
+    body: JSON.stringify(body),
+  });
+  return res.json as T;
 }

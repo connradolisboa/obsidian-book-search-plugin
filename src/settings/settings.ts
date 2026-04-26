@@ -29,6 +29,7 @@ export interface BookSearchPluginSettings {
   naverClientSecret: string;
   localePreference: string;
   apiKey: string;
+  hardcoverApiKey: string;
   openPageOnCompletion: boolean;
   showCoverImageInSearch: boolean;
   enableCoverImageSave: boolean;
@@ -50,6 +51,7 @@ export const DEFAULT_SETTINGS: BookSearchPluginSettings = {
   naverClientSecret: '',
   localePreference: 'default',
   apiKey: '',
+  hardcoverApiKey: '',
   openPageOnCompletion: true,
   showCoverImageInSearch: false,
   enableCoverImageSave: false,
@@ -200,6 +202,10 @@ export class BookSearchSettingTab extends PluginSettingTab {
         showServiceProviderExtraSettingButton();
         hideServiceProviderExtraSettingDropdown();
         hideCoverImageEdgeCurlToggle();
+      } else if (serviceProvider === ServiceProvider.hardcover) {
+        hideServiceProviderExtraSettingButton();
+        hideServiceProviderExtraSettingDropdown();
+        hideCoverImageEdgeCurlToggle();
       } else {
         hideServiceProviderExtraSettingButton();
         showServiceProviderExtraSettingDropdown();
@@ -213,6 +219,7 @@ export class BookSearchSettingTab extends PluginSettingTab {
       .addDropdown(dropDown => {
         dropDown.addOption(ServiceProvider.google, `${ServiceProvider.google} (Global)`);
         dropDown.addOption(ServiceProvider.naver, `${ServiceProvider.naver} (Korean)`);
+        dropDown.addOption(ServiceProvider.hardcover, `${ServiceProvider.hardcover} (Global)`);
         dropDown.setValue(this.plugin.settings?.serviceProvider ?? ServiceProvider.google);
         dropDown.onChange(async value => {
           const newValue = value as ServiceProvider;
@@ -358,6 +365,45 @@ export class BookSearchSettingTab extends PluginSettingTab {
           this.plugin.settings.apiKey = tempKeyValue;
           await this.plugin.saveSettings();
           new Notice('API key Saved');
+        });
+      });
+
+    // Hardcover API Settings
+    this.createHeader('Hardcover API Settings', containerEl);
+
+    const hardcoverDesc = document.createDocumentFragment();
+    hardcoverDesc.createDiv({ text: 'Get your API token from hardcover.app/account/api (free account required).' });
+    hardcoverDesc.createDiv({ text: 'For security, saved token is not shown after saving.' });
+    new Setting(containerEl).setName('Description').setDesc(hardcoverDesc);
+
+    new Setting(containerEl)
+      .setName('Status Check')
+      .setDesc('Check whether a Hardcover API token is saved.')
+      .addButton(button => {
+        button.setButtonText('API Check').onClick(async () => {
+          if (this.plugin.settings.hardcoverApiKey.length) {
+            new Notice('Hardcover API token exists.');
+          } else {
+            new Notice('Hardcover API token does not exist.');
+          }
+        });
+      });
+
+    let tempHardcoverKeyValue = '';
+    new Setting(containerEl)
+      .setName('Set API Token')
+      .setDesc('Enter your Hardcover bearer token.')
+      .addText(text => {
+        text.inputEl.type = 'password';
+        text.setValue('').onChange(async value => {
+          tempHardcoverKeyValue = value;
+        });
+      })
+      .addButton(button => {
+        button.setButtonText('Save Token').onClick(async () => {
+          this.plugin.settings.hardcoverApiKey = tempHardcoverKeyValue;
+          await this.plugin.saveSettings();
+          new Notice('Hardcover API token saved');
         });
       });
   }
