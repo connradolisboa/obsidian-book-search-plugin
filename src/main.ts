@@ -106,25 +106,30 @@ export default class BookSearchPlugin extends Plugin {
     }
 
     try {
-      // Use Obsidian's requestUrl method to fetch the image data:
       const response = await requestUrl({
         url: imageUrl,
         method: 'GET',
         headers: {
-          Accept: 'image/*',
+          Accept: '*/*',
         },
       });
 
       if (response.status !== 200) {
-        throw new Error(`Failed to download image: ${response.status}`);
+        throw new Error(`Failed to download image: HTTP ${response.status} for ${imageUrl}`);
       }
 
       const imageData = response.arrayBuffer;
-      const filePath = `${directory}/${imageName}`;
+      const filePath = directory ? `${directory}/${imageName}` : imageName;
+
+      if (directory && !(await this.app.vault.adapter.exists(directory))) {
+        await this.app.vault.adapter.mkdir(directory);
+      }
+
       await this.app.vault.adapter.writeBinary(filePath, imageData);
       return filePath;
     } catch (error) {
-      console.error('Error downloading or saving image:', error);
+      console.error('Error downloading or saving cover image:', error);
+      this.showNotice(`Cover image save failed: ${error?.message ?? error}`);
       return '';
     }
   }
